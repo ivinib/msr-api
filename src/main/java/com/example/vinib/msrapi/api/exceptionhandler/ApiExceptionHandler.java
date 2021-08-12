@@ -1,5 +1,6 @@
 package com.example.vinib.msrapi.api.exceptionhandler;
 
+import com.example.vinib.msrapi.domain.exception.EntidadeNaoEncontradaException;
 import com.example.vinib.msrapi.domain.exception.NegocioException;
 import lombok.AllArgsConstructor;
 import org.springframework.context.MessageSource;
@@ -16,6 +17,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +40,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         problema.setStatus(status.value());
-        problema.setDataHora(LocalDateTime.now());
+        problema.setDataHora(OffsetDateTime.now());
         problema.setTitulo("Um ou mais campos estão incorrentos. Preencha corretamente e tente novamente");
         problema.setCampos(campos);
 
@@ -53,7 +55,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         HttpStatus status = HttpStatus.BAD_REQUEST;
 
         problema.setStatus(status.value());
-        problema.setDataHora(LocalDateTime.now());
+        problema.setDataHora(OffsetDateTime.now());
+        problema.setTitulo(ex.getMessage());
+
+        return handleExceptionInternal(ex, problema, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(EntidadeNaoEncontradaException.class)
+    public ResponseEntity<Object> handlEntidadeNaoEncontrada(EntidadeNaoEncontradaException ex, WebRequest request){
+        Problema problema = new Problema();
+
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        problema.setStatus(status.value());
+        problema.setDataHora(OffsetDateTime.now());
         problema.setTitulo(ex.getMessage());
 
         return handleExceptionInternal(ex, problema, new HttpHeaders(), status, request);

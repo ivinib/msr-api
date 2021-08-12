@@ -1,5 +1,8 @@
 package com.example.vinib.msrapi.api.controller;
 
+import com.example.vinib.msrapi.api.assembler.ClienteAssembler;
+import com.example.vinib.msrapi.api.model.ClienteModel;
+import com.example.vinib.msrapi.api.model.input.ClienteInputModel;
 import com.example.vinib.msrapi.domain.model.Cliente;
 import com.example.vinib.msrapi.domain.service.CatalogoClienteService;
 import lombok.AllArgsConstructor;
@@ -18,35 +21,29 @@ public class ClienteController {
 
     private ClienteRepository clienteRepository;
     private CatalogoClienteService catalogoClienteService;
+    private ClienteAssembler clienteAssembler;
 
     @GetMapping
-    public List<Cliente> listar(){
-        return clienteRepository.findAll();
+    public List<ClienteModel> listar(){
+
+        return clienteAssembler.toCollectionModel(clienteRepository.findAll());
     }
 
     @GetMapping("/{clienteId}")
-    public ResponseEntity<Cliente> buscar(@PathVariable Long clienteId){
+    public ResponseEntity<ClienteModel> buscar(@PathVariable Long clienteId){
 
         return clienteRepository.findById(clienteId)
-                //.map(cliente -> ResponseEntity.ok(cliente))
-                .map(ResponseEntity::ok)
+                .map(cliente -> ResponseEntity.ok(clienteAssembler.toModel(cliente)))
                 .orElse(ResponseEntity.notFound().build());
 
-        /*
-        Optional<Cliente> cliente = clienteRepository.findById(clienteId);
-
-        if (cliente.isPresent()){
-            return ResponseEntity.ok(cliente.get());
-        }
-        return ResponseEntity.notFound().build();
-        */
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Cliente adicionar(@Valid @RequestBody Cliente cliente){
-        //return clienteRepository.save(cliente);
-        return catalogoClienteService.salvar(cliente);
+    public ClienteModel adicionar(@Valid @RequestBody ClienteInputModel clienteInput){
+        Cliente novoCliente = clienteAssembler.toEntity(clienteInput);
+        Cliente salvarCliente = catalogoClienteService.salvar(novoCliente);
+        return clienteAssembler.toModel(salvarCliente);
     }
 
     @PutMapping("/{clienteId}")
@@ -56,7 +53,6 @@ public class ClienteController {
             return ResponseEntity.notFound().build();
         }
         cliente.setId(clienteId);
-        //cliente = clienteRepository.save(cliente);
 
         cliente = catalogoClienteService.salvar(cliente);
 
@@ -70,7 +66,6 @@ public class ClienteController {
             return ResponseEntity.notFound().build();
         }
 
-        //clienteRepository.deleteById(clienteId);
         catalogoClienteService.excluir(clienteId);
 
         return ResponseEntity.noContent().build();
